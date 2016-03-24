@@ -24,6 +24,9 @@ valid options:
                     Be aware: this requires curl to be installed on your system/path!
   -x                When fetcthing the commit-msg file from 'hostname', add the hostname
                     to the no-proxy definition, thus bypassing the local proxy
+  -p [remote]       push the changes after committing using the remote specified
+  -b [branch]       use branch 'branch' on the remote repository as target when pushing
+  -a                try to auto-submit the changes which are being pushed
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
@@ -34,7 +37,7 @@ EOT
 
 
 # on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hu:e:scm:n:df:x" opt; do
+while getopts ":hu:e:scm:n:df:xp:b:a" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -78,6 +81,15 @@ while getopts ":hu:e:scm:n:df:x" opt; do
 		;;
 	x)
 		NO_PROXY=true
+		;;
+	p)
+		REMOTE=$OPTARG
+		;;
+	b)
+		BRANCH_AT_REMOTE=$OPTARG
+		;;
+	a)
+		AUTO_SUBMIT=true
 		;;
 	h)
 		printhelp
@@ -147,7 +159,7 @@ fi
 
 if [ "$FETCH_COMMIT_MSG" != "" ]; then 
 	echo "Checking, if commit-msg file needs to be fetched from server (or if it is already available locally)"
-	if [ -x .git/hooks/commit-msg ];
+	if [ -x .git/hooks/commit-msg ]; then
 		echo "commit-msg file is already available, skipping download"
 	else
 		echo "Downloading commit-msg from https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg"
@@ -162,6 +174,8 @@ if [ "$FETCH_COMMIT_MSG" != "" ]; then
 		chmod +x .git/hooks/commit-msg
 	fi
 fi
+
+# ********** COMMITING **********
 
 GIT_OPTIONS=""
 
@@ -184,6 +198,30 @@ fi
 
 if [ "$COMMIT_DUMP" == "true" ]; then
 	git log --max-count 1
+fi
+
+# ********** PUSHING **********
+
+if [ "$REMOTE" != "" ]; then
+	echo "Pushing changes to remote $REMOTE"
+
+	PUSH_OPTIONS=""
+	
+	REFSPEC=""
+	if [ "$BRANCH_AT_REMOTE" != "" ]; then
+		REFSPEC+="HEAD:refs/for/$BRANCH_AT_REMOTE"
+		if [ "$AUTO_SUBMIT" == "true" ]; then
+			REFSPEC+="%submit"
+		fi
+	fi
+	
+	git push $PUSH_OPTIONS $REMOTE $REFSPEC
+	PUSH_RET=$?
+	if [ $PUSH_RET != 0 ]; then
+		echo "ERROR: git pushed failed  with error code $PUSH_RET" >&2
+		exit 1
+	fi
+
 fi
 
 exit 0

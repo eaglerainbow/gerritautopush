@@ -10,8 +10,9 @@ function createBareRepo {
 }
 
 
-function linkToBareRepo {
-	git remote add origin file:///$1
+function cloneRepo {
+	git clone $1 .
+	git config --local push.default simple
 }
 
 
