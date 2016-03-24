@@ -1,9 +1,24 @@
 #!/bin/bash
 
 
-# on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
+function printhelp {
+cat <<EOT
+usage: gerritautopush [options]
 
-while getopts ":u:e:s" opt; do
+valid options:
+  -u [username]     set the user name of commits to 'username' locally before processing
+  -e [emailaddress] set the email address of commits to 'emailaddress' locally before processing
+  -s                stage all changes in the working directory (if not set, 
+                    staging is expected to have already been done externally)
+
+Options may appear multiple times on the command line; if used redundantly, the last 
+value provided is considered to be the valid one.
+EOT
+}
+
+
+# on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
+while getopts ":hu:e:s" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -16,6 +31,10 @@ while getopts ":u:e:s" opt; do
 	s)
 		# stage all changes before doing further activities
 		STAGE_ALL=true
+		;;
+	h)
+		printhelp
+		exit 0
 		;;
 	\?)
 		echo "Invalid option: -$OPTARG" >&2
