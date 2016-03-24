@@ -22,6 +22,8 @@ valid options:
                     needs to be separated by a colon, i.e. mygerritserver:8081)
                     Note that you do not need to specify the path!
                     Be aware: this requires curl to be installed on your system/path!
+  -x                When fetcthing the commit-msg file from 'hostname', add the hostname
+                    to the no-proxy definition, thus bypassing the local proxy
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
@@ -32,7 +34,7 @@ EOT
 
 
 # on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hu:e:scm:n:df:" opt; do
+while getopts ":hu:e:scm:n:df:x" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -73,6 +75,9 @@ while getopts ":hu:e:scm:n:df:" opt; do
 		;;
 	f)
 		FETCH_COMMIT_MSG=$OPTARG
+		;;
+	x)
+		NO_PROXY=true
 		;;
 	h)
 		printhelp
@@ -147,7 +152,13 @@ if [ "$FETCH_COMMIT_MSG" != "" ]; then
 	else
 		echo "Downloading commit-msg from https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg"
 		rm -f .git/hooks/commit-msg
-		curl --insecure https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg > .git/hooks/commit-msg
+		
+		CURL_OPTIONS=""
+		if [ "$NO_PROXY" == "true" ]; then
+			# Strip the port away, if it was specified (sed does not touch the line, if no match was found)
+			CURL_OPTIONS+=" --noproxy `echo $FETCH_COMMIT_MSG | sed -r 's/([^:]*):[0-9]*$/\1/' `"
+		fi
+		curl $CURL_OPTIONS --insecure https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg > .git/hooks/commit-msg
 		chmod +x .git/hooks/commit-msg
 	fi
 fi
