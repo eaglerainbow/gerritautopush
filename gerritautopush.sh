@@ -15,6 +15,8 @@ valid options:
                     (use quotes, if it contains spaces!)
   -n [value]        Set the CRLF handling mode (core.autocrlf) to 'value' for
                     when committing
+  -d                after committing, dump the contents of the commit
+                    which was created
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
@@ -25,7 +27,7 @@ EOT
 
 
 # on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hu:e:scm:n:" opt; do
+while getopts ":hu:e:scm:n:d" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -60,6 +62,9 @@ while getopts ":hu:e:scm:n:" opt; do
 			exit 1
 		esac
 		AUTOCRLF=$OPTARG
+		;;
+	d)
+		COMMIT_DUMP=true
 		;;
 	h)
 		printhelp
@@ -141,9 +146,13 @@ else
 fi
 
 GIT_COMMIT_RET=$?
-if [ "$GIT_COMMIT_RET" != 0 ]; then
+if [ $GIT_COMMIT_RET != 0 ]; then
 	echo "ERROR: git commit stopped with error code $GIT_COMMIT_RET" >&2
 	exit 1
+fi
+
+if [ "$COMMIT_DUMP" == "true" ]; then
+	git log --max-count 1
 fi
 
 exit 0
