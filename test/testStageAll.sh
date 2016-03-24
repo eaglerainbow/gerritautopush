@@ -21,6 +21,7 @@ fi
 if [ `git status -s | grep "A  dummy.txt" | wc -l`  != 1  ]; then
 	echo "ERROR: auto-staging did not work; this is the status of the current git repo:"
 	git status
+	exit 1
 fi
 
 cd ..
