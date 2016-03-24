@@ -55,4 +55,14 @@ if [ "$STAGE_ALL" == "true" ]; then
 	git add --all || exit 1
 fi
 
+echo "Checking if there is something to commit"
+git diff-index --quiet HEAD
+COMMIT_CHECK=$?
+if [ $COMMIT_CHECK == 0 ]; then
+	echo "No changes to commit; nothing to do"
+	exit 0
+fi
+echo "There are changes in the repository which will be commited:"
+git status -s
+
 exit 0

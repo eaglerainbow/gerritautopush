@@ -2,6 +2,7 @@
 
 function createSimpleRepo {
 	git init .
+	git commit -m "initial empty commit" --allow-empty
 }
 
 function createBareRepo {
