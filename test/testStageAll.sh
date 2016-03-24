@@ -19,7 +19,7 @@ if [ $? != 0 ]; then
 fi
 
 if [ `git status -s | grep "A  dummy.txt" | wc -l`  != 1  ]; then
-	echo "ERROR: auto-stating did not work; this is the status of the current git repo:"
+	echo "ERROR: auto-staging did not work; this is the status of the current git repo:"
 	git status
 fi
 
