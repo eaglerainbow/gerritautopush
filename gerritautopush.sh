@@ -140,4 +140,10 @@ else
 	exit 255
 fi
 
+GIT_COMMIT_RET=$?
+if [ "$GIT_COMMIT_RET" != 0 ]; then
+	echo "ERROR: git commit stopped with error code $GIT_COMMIT_RET" >&2
+	exit 1
+fi
+
 exit 0
