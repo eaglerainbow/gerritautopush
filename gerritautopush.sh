@@ -17,6 +17,11 @@ valid options:
                     when committing
   -d                after committing, dump the contents of the commit
                     which was created
+  -f [hostname]     fetch the commit-msg file for generating gerrit-compatible
+                    Change-IDs from 'hostname' (may optionally contain a port, which
+                    needs to be separated by a colon, i.e. mygerritserver:8081)
+                    Note that you do not need to specify the path!
+                    Be aware: this requires curl to be installed on your system/path!
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
@@ -27,7 +32,7 @@ EOT
 
 
 # on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hu:e:scm:n:d" opt; do
+while getopts ":hu:e:scm:n:df:" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -65,6 +70,9 @@ while getopts ":hu:e:scm:n:d" opt; do
 		;;
 	d)
 		COMMIT_DUMP=true
+		;;
+	f)
+		FETCH_COMMIT_MSG=$OPTARG
 		;;
 	h)
 		printhelp
@@ -130,6 +138,18 @@ git status -s
 if [ "$COMMIT_CHANGES" != "true" ]; then
 	echo "Committing not requested; stop processing"
 	exit 0
+fi
+
+if [ "$FETCH_COMMIT_MSG" != "" ]; then 
+	echo "Checking, if commit-msg file needs to be fetched from server (or if it is already available locally)"
+	if [ -x .git/hooks/commit-msg ];
+		echo "commit-msg file is already available, skipping download"
+	else
+		echo "Downloading commit-msg from https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg"
+		rm -f .git/hooks/commit-msg
+		curl --insecure https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg > .git/hooks/commit-msg
+		chmod +x .git/hooks/commit-msg
+	fi
 fi
 
 GIT_OPTIONS=""
