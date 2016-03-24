@@ -149,7 +149,7 @@ if [ $COMMIT_CHECK == 0 ]; then
 	echo "No changes to commit; nothing to do"
 	exit 0
 fi
-echo "There are changes in the repository which will be commited:"
+echo "There are changes in the repository which will be committed:"
 git status -s
 
 if [ "$COMMIT_CHANGES" != "true" ]; then
