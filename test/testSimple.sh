@@ -2,10 +2,12 @@
 
 . ./infra.inc
 
-echo "Running test Simple"
+echo "*** Running test Simple"
 
 rm -rf simple
 mkdir simple && cd simple
+createSimpleRepo
+
 $SUBJECT 
 
 if [ $? != 0 ]; then
@@ -13,4 +15,6 @@ if [ $? != 0 ]; then
 	exit 1
 fi
 
+cd ..
+rm -rf simple
 
