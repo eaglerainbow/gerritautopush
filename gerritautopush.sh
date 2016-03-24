@@ -10,6 +10,13 @@ valid options:
   -e [emailaddress] set the email address of commits to 'emailaddress' locally before processing
   -s                stage all changes in the working directory (if not set, 
                     staging is expected to have already been done externally)
+  -c                commit changes which are staged
+  -m [text]         use the 'text' as message for the commit subject line 
+                    (use quotes, if it contains spaces!)
+  -n [value]        Set the CRLF handling mode (core.autocrlf) to 'value' for
+                    when committing
+
+Note: Providing a commit message is mandatory, if you have specified the -c option
 
 Options may appear multiple times on the command line; if used redundantly, the last 
 value provided is considered to be the valid one.
@@ -18,7 +25,7 @@ EOT
 
 
 # on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hu:e:s" opt; do
+while getopts ":hu:e:scm:n:" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -31,6 +38,28 @@ while getopts ":hu:e:s" opt; do
 	s)
 		# stage all changes before doing further activities
 		STAGE_ALL=true
+		;;
+	c)
+		# commit changes
+		COMMIT_CHANGES=true
+		;;
+	m)
+		# command line commit message provided
+		COMMIT_MESSAGE=$OPTARG
+		;;
+	n)
+		case $OPTARG in
+		true)
+			;;
+		false)
+			;;
+		auto)
+			;;
+		*)
+			echo "Unknown value: setting autoCRLF to $OPTARG is not supported" >&2
+			exit 1
+		esac
+		AUTOCRLF=$OPTARG
 		;;
 	h)
 		printhelp
@@ -52,6 +81,15 @@ done
 if [ ! -x .git ]; then
 	echo "Local directory is not containing a git repository" >&2
 	exit 1
+fi
+
+# Verify that the options provided are consistent
+if [ "$COMMIT_CHANGES" == "true" ]; then
+	# we shall commit - do we have some message as well?
+	if [ "$COMMIT_MESSAGE" == "" ]; then
+		echo "Commit requested, but no commit message provided"
+		exit 1
+	fi
 fi
 
 # Prepare environment
@@ -83,5 +121,23 @@ if [ $COMMIT_CHECK == 0 ]; then
 fi
 echo "There are changes in the repository which will be commited:"
 git status -s
+
+if [ "$COMMIT_CHANGES" != "true" ]; then
+	echo "Committing not requested; stop processing"
+	exit 0
+fi
+
+GIT_OPTIONS=""
+
+if [ "$AUTOCRLF" != "" ]; then
+	GIT_OPTIONS+=" -c core.autocrlf=$AUTOCRLF"
+fi
+
+if [ "$COMMIT_MESSAGE" != "" ]; then
+	git $GIT_OPTIONS commit "--message=$COMMIT_MESSAGE"
+else
+	echo "SHOULD NOT BE REACHED" >&2
+	exit 255
+fi
 
 exit 0
