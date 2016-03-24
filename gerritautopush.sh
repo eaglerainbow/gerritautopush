@@ -27,6 +27,8 @@ valid options:
   -p [remote]       push the changes after committing using the remote specified
   -b [branch]       use branch 'branch' on the remote repository as target when pushing
   -a                try to auto-submit the changes which are being pushed
+  -r [options]      add receive-pack options when pushing (use quotes in case
+                    you want to pass multiple options)
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
@@ -37,7 +39,7 @@ EOT
 
 
 # on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hu:e:scm:n:df:xp:b:a" opt; do
+while getopts ":hu:e:scm:n:df:xp:b:ar:" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -90,6 +92,9 @@ while getopts ":hu:e:scm:n:df:xp:b:a" opt; do
 		;;
 	a)
 		AUTO_SUBMIT=true
+		;;
+	r)
+		RECEIVE_PACK_OPTIONS=$OPTARG
 		;;
 	h)
 		printhelp
@@ -206,6 +211,9 @@ if [ "$REMOTE" != "" ]; then
 	echo "Pushing changes to remote $REMOTE"
 
 	PUSH_OPTIONS=""
+	if [ "$RECEIVE_PACK_OPTIONS" != "" ]; then
+		PUSH_OPTIONS=--receive-pack=\"git receive-pack $RECEIVE_PACK_OPTIONS\"
+	fi
 	
 	REFSPEC=""
 	if [ "$BRANCH_AT_REMOTE" != "" ]; then
