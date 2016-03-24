@@ -7,11 +7,11 @@ while getopts ":u:e:s" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
-		USERNAME=$OPTARG
+		GIT_USERNAME=$OPTARG
 		;;
 	e)
 		# Setting email address locally before doing any further action
-		EMAILADDRESS=$OPTARG
+		GIT_EMAILADDRESS=$OPTARG
 		;;
 	s)
 		# stage all changes before doing further activities
@@ -38,14 +38,14 @@ fi
 # Prepare environment
 
 # Set user configuration parameters
-if [ "$USERNAME" != "" ]; then
-	echo "Setting local user name for commits to $USERNAME"
-	git config --local --add user.name $USERNAME
+if [ "$GIT_USERNAME" != "" ]; then
+	echo "Setting local user name for commits to $GIT_USERNAME"
+	git config --local --add user.name $GIT_USERNAME
 fi
 
-if [ "$EMAILADDRESS" != "" ]; then
-	echo "Setting local email address for commits to $EMAILADDRESS"
-	git config --local --add user.email $EMAILADDRESS
+if [ "$GIT_EMAILADDRESS" != "" ]; then
+	echo "Setting local email address for commits to $GIT_EMAILADDRESS"
+	git config --local --add user.email $GIT_EMAILADDRESS
 fi
 
 
