@@ -15,8 +15,7 @@ valid options:
                     (use quotes, if it contains spaces!)
   -n [value]        Set the CRLF handling mode (core.autocrlf) to 'value' for
                     when committing
-  -d                after committing, dump the contents of the commit
-                    which was created
+  -d                after committing, dump the contents of the commit which was created
   -f [hostname]     fetch the commit-msg file for generating gerrit-compatible
                     Change-IDs from 'hostname' (may optionally contain a port, which
                     needs to be separated by a colon, i.e. mygerritserver:8081)
