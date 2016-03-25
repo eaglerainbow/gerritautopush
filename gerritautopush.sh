@@ -109,126 +109,153 @@ while getopts ":hu:e:scm:n:df:xp:b:ar:" opt; do
 	esac
 done
 
+
+# ********************* Core Functions *******************
+
+
+function sanity_checks {
+	# Do sanity check before we start
+	if [ ! -x .git ]; then
+		echo "Local directory is not containing a git repository" >&2
+		exit 1
+	fi
+
+	# Verify that the options provided are consistent
+	if [ "$COMMIT_CHANGES" == "true" ]; then
+		# we shall commit - do we have some message as well?
+		if [ "$COMMIT_MESSAGE" == "" ]; then
+			echo "Commit requested, but no commit message provided"
+			exit 1
+		fi
+	fi
+}
+
+function prepare_environment {
+	# Set user configuration parameters
+	if [ "$GIT_USERNAME" != "" ]; then
+		echo "Setting local user name for commits to $GIT_USERNAME"
+		git config --local --add user.name $GIT_USERNAME
+	fi
+
+	if [ "$GIT_EMAILADDRESS" != "" ]; then
+		echo "Setting local email address for commits to $GIT_EMAILADDRESS"
+		git config --local --add user.email $GIT_EMAILADDRESS
+	fi
+
+}
+
+function stage_all {
+	# Stage all changes if requested
+	if [ "$STAGE_ALL" == "true" ]; then
+		echo "Staging all changes..."
+		git add --all || exit 1
+	fi
+}
+
+function check_for_new_commit {
+	echo "Checking if there is something to commit"
+	git diff-index --quiet HEAD
+	COMMIT_CHECK=$?
+	if [ $COMMIT_CHECK == 0 ]; then
+		echo "No changes to commit; nothing to do"
+		exit 0
+	fi
+	echo "There are changes in the repository which will be committed:"
+	git status -s
+
+	if [ "$COMMIT_CHANGES" != "true" ]; then
+		echo "Committing not requested; stop processing"
+		exit 0
+	fi
+}
+
+function fetch_commitmsg {
+	if [ "$FETCH_COMMIT_MSG" != "" ]; then 
+		echo "Checking, if commit-msg file needs to be fetched from server (or if it is already available locally)"
+		if [ -x .git/hooks/commit-msg ]; then
+			echo "commit-msg file is already available, skipping download"
+		else
+			echo "Downloading commit-msg from https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg"
+			rm -f .git/hooks/commit-msg
+			
+			local CURL_OPTIONS=""
+			if [ "$NO_PROXY" == "true" ]; then
+				# Strip the port away, if it was specified (sed does not touch the line, if no match was found)
+				CURL_OPTIONS+=" --noproxy `echo $FETCH_COMMIT_MSG | sed -r 's/([^:]*):[0-9]*$/\1/' `"
+			fi
+			curl $CURL_OPTIONS --insecure https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg > .git/hooks/commit-msg
+			chmod +x .git/hooks/commit-msg
+		fi
+	fi
+
+}
+
+function commit {
+	local GIT_OPTIONS=""
+
+	if [ "$AUTOCRLF" != "" ]; then
+		GIT_OPTIONS+=" -c core.autocrlf=$AUTOCRLF"
+	fi
+
+	if [ "$COMMIT_MESSAGE" != "" ]; then
+		git $GIT_OPTIONS commit "--message=$COMMIT_MESSAGE"
+	else
+		echo "SHOULD NOT BE REACHED" >&2
+		exit 255
+	fi
+
+	local GIT_COMMIT_RET=$?
+	if [ $GIT_COMMIT_RET != 0 ]; then
+		echo "ERROR: git commit stopped with error code $GIT_COMMIT_RET" >&2
+		exit 1
+	fi
+
+	if [ "$COMMIT_DUMP" == "true" ]; then
+		git log --max-count 1
+	fi
+}
+
+function push {
+	if [ "$REMOTE" != "" ]; then
+		echo "Pushing changes to remote $REMOTE"
+
+		local PUSH_OPTIONS=""
+		if [ "$RECEIVE_PACK_OPTIONS" != "" ]; then
+			PUSH_OPTIONS=--receive-pack=\"git receive-pack $RECEIVE_PACK_OPTIONS\"
+		fi
+		
+		local REFSPEC=""
+		if [ "$BRANCH_AT_REMOTE" != "" ]; then
+			REFSPEC+="HEAD:refs/for/$BRANCH_AT_REMOTE"
+			if [ "$AUTO_SUBMIT" == "true" ]; then
+				REFSPEC+="%submit"
+			fi
+		fi
+		
+		git push $PUSH_OPTIONS $REMOTE $REFSPEC
+		
+		local PUSH_RET=$?
+		if [ $PUSH_RET != 0 ]; then
+			echo "ERROR: git pushed failed  with error code $PUSH_RET" >&2
+			exit 1
+		fi
+
+	fi
+
+}
+
 # ********************* Main Routine *******************
 
-# Do sanity check before we start
-if [ ! -x .git ]; then
-	echo "Local directory is not containing a git repository" >&2
-	exit 1
-fi
+sanity_checks
+prepare_environment
 
-# Verify that the options provided are consistent
-if [ "$COMMIT_CHANGES" == "true" ]; then
-	# we shall commit - do we have some message as well?
-	if [ "$COMMIT_MESSAGE" == "" ]; then
-		echo "Commit requested, but no commit message provided"
-		exit 1
-	fi
-fi
+stage_all
 
-# Prepare environment
+check_for_new_commit
 
-# Set user configuration parameters
-if [ "$GIT_USERNAME" != "" ]; then
-	echo "Setting local user name for commits to $GIT_USERNAME"
-	git config --local --add user.name $GIT_USERNAME
-fi
+fetch_commitmsg
 
-if [ "$GIT_EMAILADDRESS" != "" ]; then
-	echo "Setting local email address for commits to $GIT_EMAILADDRESS"
-	git config --local --add user.email $GIT_EMAILADDRESS
-fi
-
-
-# Stage all changes if requested
-if [ "$STAGE_ALL" == "true" ]; then
-	echo "Staging all changes..."
-	git add --all || exit 1
-fi
-
-echo "Checking if there is something to commit"
-git diff-index --quiet HEAD
-COMMIT_CHECK=$?
-if [ $COMMIT_CHECK == 0 ]; then
-	echo "No changes to commit; nothing to do"
-	exit 0
-fi
-echo "There are changes in the repository which will be committed:"
-git status -s
-
-if [ "$COMMIT_CHANGES" != "true" ]; then
-	echo "Committing not requested; stop processing"
-	exit 0
-fi
-
-if [ "$FETCH_COMMIT_MSG" != "" ]; then 
-	echo "Checking, if commit-msg file needs to be fetched from server (or if it is already available locally)"
-	if [ -x .git/hooks/commit-msg ]; then
-		echo "commit-msg file is already available, skipping download"
-	else
-		echo "Downloading commit-msg from https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg"
-		rm -f .git/hooks/commit-msg
-		
-		CURL_OPTIONS=""
-		if [ "$NO_PROXY" == "true" ]; then
-			# Strip the port away, if it was specified (sed does not touch the line, if no match was found)
-			CURL_OPTIONS+=" --noproxy `echo $FETCH_COMMIT_MSG | sed -r 's/([^:]*):[0-9]*$/\1/' `"
-		fi
-		curl $CURL_OPTIONS --insecure https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg > .git/hooks/commit-msg
-		chmod +x .git/hooks/commit-msg
-	fi
-fi
-
-# ********** COMMITING **********
-
-GIT_OPTIONS=""
-
-if [ "$AUTOCRLF" != "" ]; then
-	GIT_OPTIONS+=" -c core.autocrlf=$AUTOCRLF"
-fi
-
-if [ "$COMMIT_MESSAGE" != "" ]; then
-	git $GIT_OPTIONS commit "--message=$COMMIT_MESSAGE"
-else
-	echo "SHOULD NOT BE REACHED" >&2
-	exit 255
-fi
-
-GIT_COMMIT_RET=$?
-if [ $GIT_COMMIT_RET != 0 ]; then
-	echo "ERROR: git commit stopped with error code $GIT_COMMIT_RET" >&2
-	exit 1
-fi
-
-if [ "$COMMIT_DUMP" == "true" ]; then
-	git log --max-count 1
-fi
-
-# ********** PUSHING **********
-
-if [ "$REMOTE" != "" ]; then
-	echo "Pushing changes to remote $REMOTE"
-
-	PUSH_OPTIONS=""
-	if [ "$RECEIVE_PACK_OPTIONS" != "" ]; then
-		PUSH_OPTIONS=--receive-pack=\"git receive-pack $RECEIVE_PACK_OPTIONS\"
-	fi
-	
-	REFSPEC=""
-	if [ "$BRANCH_AT_REMOTE" != "" ]; then
-		REFSPEC+="HEAD:refs/for/$BRANCH_AT_REMOTE"
-		if [ "$AUTO_SUBMIT" == "true" ]; then
-			REFSPEC+="%submit"
-		fi
-	fi
-	
-	git push $PUSH_OPTIONS $REMOTE $REFSPEC
-	PUSH_RET=$?
-	if [ $PUSH_RET != 0 ]; then
-		echo "ERROR: git pushed failed  with error code $PUSH_RET" >&2
-		exit 1
-	fi
-
-fi
+commit
+push
 
 exit 0
