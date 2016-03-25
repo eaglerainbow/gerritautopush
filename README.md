@@ -29,10 +29,44 @@ Gerritautopush.sh allows you to automate to commit changes of files to a git rep
   * Setting the email address to be used for committing in the repository locally
 
 # Installation
-tbd
+Copy the file gerritautopush.sh to any location on your maschine. If you place it into some directory which is part of your PATH environment variable, you may use it in any arbitrary directory.
 
 # Usage
-tbd
+Start the script by calling it via the command-line as usual.
+Provide the parameter -h to see the current help&usage documentation (built into the script).
+
+As of writing, this is the usage documentation provided:
+```
+valid options:
+  -u [username]     set the user name of commits to 'username' locally before processing
+  -e [emailaddress] set the email address of commits to 'emailaddress' locally before processing
+  -s                stage all changes in the working directory (if not set,
+                    staging is expected to have already been done externally)
+  -c                commit changes which are staged
+  -m [text]         use the 'text' as message for the commit subject line
+                    (use quotes, if it contains spaces!)
+  -n [value]        Set the CRLF handling mode (core.autocrlf) to 'value' for
+                    when committing
+  -d                after committing, dump the contents of the commit
+                    which was created
+  -f [hostname]     fetch the commit-msg file for generating gerrit-compatible
+                    Change-IDs from 'hostname' (may optionally contain a port, which
+                    needs to be separated by a colon, i.e. mygerritserver:8081)
+                    Note that you do not need to specify the path!
+                    Be aware: this requires curl to be installed on your system/path!
+  -x                When fetcthing the commit-msg file from 'hostname', add the hostname
+                    to the no-proxy definition, thus bypassing the local proxy
+  -p [remote]       push the changes after committing using the remote specified
+  -b [branch]       use branch 'branch' on the remote repository as target when pushing
+  -a                try to auto-submit the changes which are being pushed
+  -r [options]      add receive-pack options when pushing (use quotes in case
+                    you want to pass multiple options)
+
+Note: Providing a commit message is mandatory, if you have specified the -c option
+
+Options may appear multiple times on the command line; if used redundantly, the last
+value provided is considered to be the valid one.
+```
 
 # Example
 A very typical usage with staging, committing and pushing is written like this:
