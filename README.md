@@ -10,3 +10,7 @@ tbd
 
 # Usage
 tbd
+
+# Execution of automated Tests
+Change to the directory "test", which is available in this repository.
+Run script ./runtests.sh there.
