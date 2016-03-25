@@ -5,6 +5,13 @@ Gerritautopush.sh allows you to automate to commit changes of files to a git rep
 * You need to have a git command-line tool installed (such as under Windows: msysgit)
 * You need to have a bash-compatible environment available (usually available on Linux maschines out-of-the-box, available in many git command-line packages, such as msysgit)
 
+# Features
+* on staging
+* on committing
+* on pushing
+* on submission
+* Miscellaneous
+
 # Installation
 tbd
 
