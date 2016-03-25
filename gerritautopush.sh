@@ -25,6 +25,11 @@ valid options:
                     to the no-proxy definition, thus bypassing the local proxy
   -p [remote]       push the changes after committing using the remote specified
   -b [branch]       use branch 'branch' on the remote repository as target when pushing
+                    Depending if a Change Id was generated, it is automatically determined
+                    if pushing shall be done for code review, or a direct push against
+                    the branch of the repository shall be performed.
+                    You may overwrite this, if you fully specify the branch's name including
+                    all prefixes, i.e. refs/heads/master to force pushing directly to master
   -a                try to auto-submit the changes which are being pushed
   -r [options]      add receive-pack options when pushing (use quotes in case
                     you want to pass multiple options)
@@ -226,11 +231,22 @@ function push {
 		
 		local REFSPEC=""
 		if [ "$BRANCH_AT_REMOTE" != "" ]; then
-			REFSPEC+="HEAD:refs/for/$BRANCH_AT_REMOTE"
-			if [ "$AUTO_SUBMIT" == "true" ]; then
-				REFSPEC+="%submit"
+		
+			if [[ $BRANCH_AT_REMOTE =~ ^refs/ ]]; then
+				REFSPEC+="HEAD:$BRANCH_AT_REMOTE"
+			else
+				local HAS_CHANGE_ID=`git log -1 | grep Change-Id: | wc -l`
+				if [ $HAS_CHANGE_ID == 1 ]; then
+					REFSPEC+="HEAD:refs/for/$BRANCH_AT_REMOTE"
+					if [ "$AUTO_SUBMIT" == "true" ]; then
+						REFSPEC+="%submit"
+					fi
+				else
+					REFSPEC+="HEAD:refs/heads/$BRANCH_AT_REMOTE"
+				fi
 			fi
 		fi
+		echo "Using refspec $REFSPEC on pushing to $REMOTE"
 		
 		git push $PUSH_OPTIONS $REMOTE $REFSPEC
 		
