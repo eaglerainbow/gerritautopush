@@ -94,3 +94,39 @@ fi
 cd ..
 rm -rf $TESTDIR
 
+
+echo "*** Running test Commit -- positive test - verify that autocrlf has been passed along"
+
+export MOCK_RESPONSE=`mktemp`
+export GIT_CMD="$PWD/mockGitAutoCRLF.sh"
+
+rm -rf $TESTDIR
+mkdir $TESTDIR && cd $TESTDIR
+createSimpleRepo
+
+echo "test" > dummy.txt
+
+$SUBJECT -s -c -m "dummy commit message" -n true
+
+if [ $? != 0 ]; then
+	echo "ERROR: Non-zero exit on test"
+	exit 1
+fi
+
+if [ `cat $MOCK_RESPONSE | grep -c -e ".c core.autocrlf=true" ` != 1 ]; then
+	echo "ERROR: autocrlf option was not provided properly"
+	rm -f $MOCK_RESPONSE
+	exit 1
+fi
+
+export GIT_CMD=""
+rm -f $MOCK_RESPONSE
+
+if [ `git status -s | grep "A  dummy.txt" | wc -l`  != 0  ]; then
+	echo "ERROR: stuff is still staged, even after committing; this is the status of the current git repo:"
+	git status
+	exit 1
+fi
+
+cd ..
+rm -rf $TESTDIR
