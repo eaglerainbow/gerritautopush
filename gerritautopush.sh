@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Allow overwriting the command for running git via environment variable
+# May also be used by the test infrastructure to mock the git command
+if [ "$GIT_CMD" == "" ]; then
+	GIT_CMD="git"
+fi
+
 
 function printhelp {
 cat <<EOT
@@ -142,12 +148,12 @@ function prepare_environment {
 	# Set user configuration parameters
 	if [ "$GIT_USERNAME" != "" ]; then
 		echo "Setting local user name for commits to $GIT_USERNAME"
-		git config --local --add user.name $GIT_USERNAME
+		$GIT_CMD config --local --add user.name $GIT_USERNAME
 	fi
 
 	if [ "$GIT_EMAILADDRESS" != "" ]; then
 		echo "Setting local email address for commits to $GIT_EMAILADDRESS"
-		git config --local --add user.email $GIT_EMAILADDRESS
+		$GIT_CMD config --local --add user.email $GIT_EMAILADDRESS
 	fi
 
 }
@@ -156,20 +162,20 @@ function stage_all {
 	# Stage all changes if requested
 	if [ "$STAGE_ALL" == "true" ]; then
 		echo "Staging all changes..."
-		git add --all || exit 1
+		$GIT_CMD add --all || exit 1
 	fi
 }
 
 function check_for_new_commit {
 	echo "Checking if there is something to commit"
-	git diff-index --quiet HEAD
+	$GIT_CMD diff-index --quiet HEAD
 	COMMIT_CHECK=$?
 	if [ $COMMIT_CHECK == 0 ]; then
 		echo "No changes to commit; nothing to do"
 		exit 0
 	fi
 	echo "There are changes in the repository which will be committed:"
-	git status -s
+	$GIT_CMD status -s
 
 	if [ "$COMMIT_CHANGES" != "true" ]; then
 		echo "Committing not requested; stop processing"
@@ -214,7 +220,7 @@ function commit {
 	fi
 
 	if [ "$COMMIT_MESSAGE" != "" ]; then
-		git $GIT_OPTIONS commit "--message=$COMMIT_MESSAGE"
+		$GIT_CMD $GIT_OPTIONS commit "--message=$COMMIT_MESSAGE"
 	else
 		echo "SHOULD NOT BE REACHED" >&2
 		exit 255
@@ -227,7 +233,7 @@ function commit {
 	fi
 
 	if [ "$COMMIT_DUMP" == "true" ]; then
-		git log --max-count 1
+		$GIT_CMD log --max-count 1
 	fi
 }
 
@@ -248,7 +254,7 @@ function push {
 			if [[ $BRANCH_AT_REMOTE =~ ^refs/ ]]; then
 				REFSPEC+="HEAD:$BRANCH_AT_REMOTE"
 			else
-				local HAS_CHANGE_ID=`git log -1 | grep Change-Id: | wc -l`
+				local HAS_CHANGE_ID=`$GIT_CMD log -1 | grep Change-Id: | wc -l`
 				if [ $HAS_CHANGE_ID == 1 ]; then
 					REFSPEC+="HEAD:refs/for/$BRANCH_AT_REMOTE"
 					if [ "$AUTO_SUBMIT" == "true" ]; then
@@ -262,7 +268,7 @@ function push {
 		echo "Using refspec $REFSPEC on pushing to $REMOTE"
 		
 		local TMPFILE=`mktemp`
-		git push $PUSH_OPTIONS $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
+		$GIT_CMD push $PUSH_OPTIONS $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
 		
 		local PUSH_RET=$?
 		if [ $PUSH_RET == 0 ]; then
@@ -314,7 +320,7 @@ while true; do
 	elif [ $PUSH_RET == 129 ]; then
 		# undo the previous commit. The old Change-Id may be tainted.
 		# The commit statement above will make sure that a new Change-Id is being drawn.
-		git reset --mixed
+		$GIT_CMD reset --mixed
 	fi
 done
 
