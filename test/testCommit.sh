@@ -130,3 +130,27 @@ fi
 
 cd ..
 rm -rf $TESTDIR
+
+echo "*** Running test Commit -- negative test - proper reaction on commit failure"
+
+export GIT_CMD="$PWD/mockGitCommitFailure.sh"
+
+rm -rf $TESTDIR
+mkdir $TESTDIR && cd $TESTDIR
+createSimpleRepo
+
+echo "test" > dummy.txt
+
+$SUBJECT -s -c -m "dummy commit message"
+
+if [ $? == 0 ]; then
+	echo "ERROR: Non-zero exit expected, but got $?"
+	exit 1
+fi
+echo "Note: If you see an error message above, this is intended!"
+
+export GIT_CMD=""
+rm -f $MOCK_RESPONSE
+
+cd ..
+rm -rf $TESTDIR
