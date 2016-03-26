@@ -306,7 +306,7 @@ COUNT_PUSH=0
 
 while true; do
 	COUNT_PUSH=$[COUNT_PUSH+1]
-	if [ $COUNT_PUSH > 3 ]; then
+	if [ $COUNT_PUSH -gt 3 ]; then
 		echo "Number of push attempts exceeded; stopping execution"
 		exit 1
 	fi
@@ -314,7 +314,7 @@ while true; do
 	commit
 	push
 	
-	local PUSH_RET=$?
+	PUSH_RET=$?
 	if [ $PUSH_RET == 0 ]; then
 		break
 	elif [ $PUSH_RET == 129 ]; then
