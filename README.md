@@ -23,7 +23,7 @@ Gerritautopush.sh allows you to automate to commit changes of files to a git rep
 * on pushing
   * custom selection of the target branch in the remote repository
   * try to immediately submit the Code Review (with Verified+1 and CodeReview+2) on pushing
-  * enrich call to receive-pack with additional custom parameters (for instance allows adding additional CC reecivers to the Gerrit Code Review emails)
+  * enrich call to receive-pack with additional custom parameters (for instance allows adding additional CC receivers to the Gerrit Code Review emails)
   * automated recovery on "internal server error" issue by creating a new Change-Id and trying to push once again
 * Miscellaneous
   * Setting the user name to be used for committing in the repository locally
