@@ -34,6 +34,7 @@ valid options:
                     You may overwrite this, if you fully specify the branch's name including
                     all prefixes, i.e. refs/heads/master to force pushing directly to master
   -a                try to auto-submit the changes which are being pushed
+                    (requires Gerrit server v2.7 or later)
   -r [options]      add receive-pack options when pushing (use quotes in case
                     you want to pass multiple options)
 
@@ -252,6 +253,7 @@ function push {
 				if [ $HAS_CHANGE_ID == 1 ]; then
 					REFSPEC+="HEAD:refs/for/$BRANCH_AT_REMOTE"
 					if [ "$AUTO_SUBMIT" == "true" ]; then
+						# see also http://gerrit-documentation.googlecode.com/svn/Documentation/2.7/user-upload.html#auto_merge
 						REFSPEC+="%submit"
 					fi
 				else
@@ -296,6 +298,8 @@ check_for_new_commit
 
 fetch_commitmsg
 
+commit
+
 COUNT_PUSH=0
 
 while true; do
@@ -305,16 +309,15 @@ while true; do
 		exit 1
 	fi
 	
-	commit
 	push
-	
 	PUSH_RET=$?
 	if [ $PUSH_RET == 0 ]; then
 		break
 	elif [ $PUSH_RET == 129 ]; then
-		# undo the previous commit. The old Change-Id may be tainted.
-		# The commit statement above will make sure that a new Change-Id is being drawn.
-		git reset --mixed
+		# as described at http://gerrit-documentation.googlecode.com/svn/Documentation/2.7/user-upload.html#auto_merge
+		# triggering the execution of "submit" may be done with the same command and does
+		# not require to draw a new Change-Id
+		continue
 	fi
 done
 
