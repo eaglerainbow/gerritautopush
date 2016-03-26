@@ -1,4 +1,4 @@
 #!/bin/bash
 
-echo "DEBUG: Git Mock was called with: $*"
-git $*
+echo "DEBUG: Git Mock was called with: $@"
+git "$@"
