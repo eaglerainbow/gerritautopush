@@ -40,31 +40,38 @@ As of writing, this is the usage documentation provided:
 valid options:
   -u [username]     set the user name of commits to 'username' locally before processing
   -e [emailaddress] set the email address of commits to 'emailaddress' locally before processing
-  -s                stage all changes in the working directory (if not set,
+  -s                stage all changes in the working directory (if not set, 
                     staging is expected to have already been done externally)
   -c                commit changes which are staged
-  -m [text]         use the 'text' as message for the commit subject line
+  -m [text]         use the 'text' as message for the commit subject line 
                     (use quotes, if it contains spaces!)
   -n [value]        Set the CRLF handling mode (core.autocrlf) to 'value' for
                     when committing
-  -d                after committing, dump the contents of the commit
-                    which was created
+  -d                after committing, dump the contents of the commit which was created
   -f [hostname]     fetch the commit-msg file for generating gerrit-compatible
                     Change-IDs from 'hostname' (may optionally contain a port, which
                     needs to be separated by a colon, i.e. mygerritserver:8081)
-                    Note that you do not need to specify the path!
-                    Be aware: this requires curl to be installed on your system/path!
+                    By default, https is being used to approach the gerrit server.
+                    Alternatively, you may also specify the protocol using the URL notation.
+                    Example: http://gerrit.example.bogus:8081
+                    Note that in all cases you must not specify the path to the file!
+                    Be aware: this feature requires curl to be installed on your system/path!
   -x                When fetcthing the commit-msg file from 'hostname', add the hostname
                     to the no-proxy definition, thus bypassing the local proxy
   -p [remote]       push the changes after committing using the remote specified
   -b [branch]       use branch 'branch' on the remote repository as target when pushing
+                    Depending if a Change Id was generated, it is automatically determined
+                    if pushing shall be done for code review, or a direct push against
+                    the branch of the repository shall be performed.
+                    You may overwrite this, if you fully specify the branch's name including
+                    all prefixes, i.e. refs/heads/master to force pushing directly to master
   -a                try to auto-submit the changes which are being pushed
   -r [options]      add receive-pack options when pushing (use quotes in case
                     you want to pass multiple options)
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
-Options may appear multiple times on the command line; if used redundantly, the last
+Options may appear multiple times on the command line; if used redundantly, the last 
 value provided is considered to be the valid one.
 ```
 

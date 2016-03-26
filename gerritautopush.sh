@@ -19,8 +19,11 @@ valid options:
   -f [hostname]     fetch the commit-msg file for generating gerrit-compatible
                     Change-IDs from 'hostname' (may optionally contain a port, which
                     needs to be separated by a colon, i.e. mygerritserver:8081)
-                    Note that you do not need to specify the path!
-                    Be aware: this requires curl to be installed on your system/path!
+                    By default, https is being used to approach the gerrit server.
+                    Alternatively, you may also specify the protocol using the URL notation.
+                    Example: http://gerrit.example.bogus:8081
+                    Note that in all cases you must not specify the path to the file!
+                    Be aware: this feature requires curl to be installed on your system/path!
   -x                When fetcthing the commit-msg file from 'hostname', add the hostname
                     to the no-proxy definition, thus bypassing the local proxy
   -p [remote]       push the changes after committing using the remote specified
@@ -186,9 +189,17 @@ function fetch_commitmsg {
 			local CURL_OPTIONS=""
 			if [ "$NO_PROXY" == "true" ]; then
 				# Strip the port away, if it was specified (sed does not touch the line, if no match was found)
-				CURL_OPTIONS+=" --noproxy `echo $FETCH_COMMIT_MSG | sed -r 's/([^:]*):[0-9]*$/\1/' `"
+				CURL_OPTIONS+=" --noproxy `echo $FETCH_COMMIT_MSG | sed -r 's/((ht|f)tps?://)?([^:]*):[0-9]*$/\1/' `"
 			fi
-			curl $CURL_OPTIONS --insecure https://$FETCH_COMMIT_MSG/tools/hooks/commit-msg > .git/hooks/commit-msg
+			
+			local FETCH_URL=""
+			if [[ $FETCH_COMMIT_MSG =~ ^(ht|f)tps?:// ]]; then
+				FETCH_URL=$FETCH_COMMIT_MSG
+			else
+				FETCH_URL=https://$FETCH_COMMIT_MSG
+			fi
+			
+			curl $CURL_OPTIONS --insecure $FETCH_URL/tools/hooks/commit-msg > .git/hooks/commit-msg
 			chmod +x .git/hooks/commit-msg
 		fi
 	fi
