@@ -235,6 +235,8 @@ function push {
 	if [ "$REMOTE" != "" ]; then
 		echo "Pushing changes to remote $REMOTE"
 
+		# verify number of attempts
+		
 		local PUSH_OPTIONS=""
 		if [ "$RECEIVE_PACK_OPTIONS" != "" ]; then
 			PUSH_OPTIONS=--receive-pack=\"git receive-pack $RECEIVE_PACK_OPTIONS\"
@@ -259,16 +261,28 @@ function push {
 		fi
 		echo "Using refspec $REFSPEC on pushing to $REMOTE"
 		
-		git push $PUSH_OPTIONS $REMOTE $REFSPEC
+		local TMPFILE=`mktemp`
+		git push $PUSH_OPTIONS $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
 		
 		local PUSH_RET=$?
-		if [ $PUSH_RET != 0 ]; then
-			echo "ERROR: git pushed failed  with error code $PUSH_RET" >&2
+		if [ $PUSH_RET == 0 ]; then
+			return 0;
+		fi
+		
+		# something failed; we need to analyze what went wrong
+		if [ `cat $TMPFILE | grep -e 'remote rejected.*Internal server error' | wc -l` > 0 ]; then
+			rm -f $TMPFILE
+			echo "WARNING: Internal server error occured; trying to push again after 3 seconds"
+			sleep 3
+			return 129
+		else
+			echo "ERROR: git pushed failed with error code $PUSH_RET" >&2
+			rm -f $TMPFILE
 			exit 1
 		fi
-
+		rm -f $TMPFILE
 	fi
-
+	return 0
 }
 
 # ********************* Main Routine *******************
@@ -282,7 +296,27 @@ check_for_new_commit
 
 fetch_commitmsg
 
-commit
-push
+COUNT_PUSH=0
+
+while true; do
+	COUNT_PUSH=$[COUNT_PUSH+1]
+	if [ $COUNT_PUSH > 3 ]; then
+		echo "Number of push attempts exceeded; stopping execution"
+		exit 1
+	fi
+	
+	commit
+	push
+	
+	local PUSH_RET=$?
+	if [ $PUSH_RET == 0 ]; then
+		break
+	elif [ $PUSH_RET == 129 ]; then
+		# undo the previous commit. The old Change-Id may be tainted.
+		# The commit statement above will make sure that a new Change-Id is being drawn.
+		git reset --mixed
+	fi
+done
+
 
 exit 0
