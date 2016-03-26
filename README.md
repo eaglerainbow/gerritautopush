@@ -1,7 +1,7 @@
 gerritautopush
 ==============
 
-Gerritautopush.sh allows you to automate to commit changes of files to a git repository and push&submit those changes to a Gerrit/git server. it is especially suited to run in a batch environment, such as a Jenkins job.
+Gerritautopush.sh helps you automating to commit changes of files to a git repository and push&submit those changes to a Gerrit/git server. it is especially suited to run in a batch environment, such as a Jenkins job.
 
 # Prerequisites
 * You need to have a git command-line tool installed (such as under Windows: msysgit).
