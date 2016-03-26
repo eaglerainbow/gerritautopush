@@ -5,6 +5,8 @@
 
 echo "*** Running test LocalGitDir"
 
+export GIT_CMD="$PWD/mockGitSimple.sh"
+
 rm -rf localgitdir
 mkdir localgitdir && cd localgitdir
 createSimpleRepo
@@ -15,6 +17,8 @@ if [ $? != 0 ]; then
 	echo "ERROR: Non-zero exit on test"
 	exit 1
 fi
+
+export GIT_CMD=""
 
 if [ `git config --list | grep "user.email=someuser@example.bogus" | wc -l` != 1 ]; then
 	echo "ERROR: Email address was not set properly; configuration parameter are as follows:"
