@@ -263,8 +263,6 @@ function dopush {
 	if [ "$REMOTE" != "" ]; then
 		echo "Pushing changes to remote $REMOTE"
 
-		# verify number of attempts
-		
 		local PUSH_OPTIONS=""
 		if [ "$RECEIVE_PACK_OPTIONS" != "" ]; then
 			PUSH_OPTIONS=--receive-pack=\"git receive-pack $RECEIVE_PACK_OPTIONS\"
@@ -331,6 +329,7 @@ COUNT_PUSH=0
 
 while true; do
 	COUNT_PUSH=$[COUNT_PUSH+1]
+	# verify number of attempts
 	if [ $COUNT_PUSH -gt 3 ]; then
 		echo "Number of push attempts exceeded; stopping execution"
 		exit 1
