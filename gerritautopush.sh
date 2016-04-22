@@ -232,7 +232,7 @@ function commit {
 	fi
 }
 
-function push {
+function dopush {
 	if [ "$REMOTE" != "" ]; then
 		echo "Pushing changes to remote $REMOTE"
 
@@ -272,7 +272,7 @@ function push {
 		fi
 		
 		# something failed; we need to analyze what went wrong
-		if [ `cat $TMPFILE | grep -e 'remote rejected.*Internal server error' | wc -l` > 0 ] && [ $AUTO_SUBMIT == "true" ]; then
+		if [ `cat $TMPFILE | grep -e 'remote rejected.*Internal server error' | wc -l` -gt 0 ] && [ $AUTO_SUBMIT == "true" ]; then
 			rm -f $TMPFILE
 			echo "WARNING: Internal server error occured; trying to push again after 3 seconds"
 			sleep 3
@@ -309,7 +309,7 @@ while true; do
 		exit 1
 	fi
 	
-	push
+	dopush
 	PUSH_RET=$?
 	if [ $PUSH_RET == 0 ]; then
 		break
