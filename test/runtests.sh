@@ -11,4 +11,4 @@ echo "Script under test: $SUBJECT"
 ./testStageAll.sh || exit 1
 ./testCommit.sh || exit 1
 ./testPush.sh || exit 1
-
+./testOtherGitExecutable.sh || exit 1

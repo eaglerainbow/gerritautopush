@@ -37,6 +37,8 @@ valid options:
                     (requires Gerrit server v2.7 or later)
   -r [options]      add receive-pack options when pushing (use quotes in case
                     you want to pass multiple options)
+  -g [location]     do not use git from the path, but use a given version
+                    specified at 'location' (you need to specify the full path)
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
@@ -47,7 +49,7 @@ EOT
 
 
 # on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hu:e:scm:n:df:xp:b:ar:" opt; do
+while getopts ":hu:e:scm:n:df:xp:b:ar:g:" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -104,6 +106,9 @@ while getopts ":hu:e:scm:n:df:xp:b:ar:" opt; do
 	r)
 		RECEIVE_PACK_OPTIONS=$OPTARG
 		;;
+	g)
+		GIT_PROGRAM=$OPTARG
+		;;
 	h)
 		printhelp
 		exit 0
@@ -119,6 +124,10 @@ while getopts ":hu:e:scm:n:df:xp:b:ar:" opt; do
 done
 
 
+if [ "$GIT_PROGRAM" == "" ]; then
+	GIT_PROGRAM=git   # use the program that is available via path
+fi
+
 # ********************* Core Functions *******************
 
 
@@ -129,6 +138,23 @@ function sanity_checks {
 		exit 1
 	fi
 
+	# Verify that we have a valid git executable
+	local TMPFILE=`mktemp`
+	$GIT_PROGRAM --version 2>&1 >$TMPFILE
+	
+	if [ $? != 0 ]; then
+		echo "The git toolbox cannot be accessed at $GIT_PROGRAM"
+		rm -f $TMPFILE	# don't forget the cleanup
+		exit 1
+	fi
+	
+	if [ `cat $TMPFILE | grep git | wc -l` == 0 ]; then
+		echo "The git toolbox cannot be accessed at $GIT_PROGRAM"
+		rm -f $TMPFILE	# don't forget the cleanup
+		exit 1
+	fi
+	rm -f $TMPFILE
+	
 	# Verify that the options provided are consistent
 	if [ "$COMMIT_CHANGES" == "true" ]; then
 		# we shall commit - do we have some message as well?
@@ -137,18 +163,19 @@ function sanity_checks {
 			exit 1
 		fi
 	fi
+	
 }
 
 function prepare_environment {
 	# Set user configuration parameters
 	if [ "$GIT_USERNAME" != "" ]; then
 		echo "Setting local user name for commits to $GIT_USERNAME"
-		git config --local --add user.name $GIT_USERNAME
+		$GIT_PROGRAM config --local --add user.name $GIT_USERNAME
 	fi
 
 	if [ "$GIT_EMAILADDRESS" != "" ]; then
 		echo "Setting local email address for commits to $GIT_EMAILADDRESS"
-		git config --local --add user.email $GIT_EMAILADDRESS
+		$GIT_PROGRAM config --local --add user.email $GIT_EMAILADDRESS
 	fi
 
 }
@@ -157,20 +184,20 @@ function stage_all {
 	# Stage all changes if requested
 	if [ "$STAGE_ALL" == "true" ]; then
 		echo "Staging all changes..."
-		git add --all || exit 1
+		$GIT_PROGRAM add --all || exit 1
 	fi
 }
 
 function check_for_new_commit {
 	echo "Checking if there is something to commit"
-	git diff-index --quiet HEAD
+	$GIT_PROGRAM diff-index --quiet HEAD
 	COMMIT_CHECK=$?
 	if [ $COMMIT_CHECK == 0 ]; then
 		echo "No changes to commit; nothing to do"
 		exit 0
 	fi
 	echo "There are changes in the repository which will be committed:"
-	git status -s
+	$GIT_PROGRAM status -s
 
 	if [ "$COMMIT_CHANGES" != "true" ]; then
 		echo "Committing not requested; stop processing"
@@ -215,7 +242,7 @@ function commit {
 	fi
 
 	if [ "$COMMIT_MESSAGE" != "" ]; then
-		git $GIT_OPTIONS commit "--message=$COMMIT_MESSAGE"
+		$GIT_PROGRAM $GIT_OPTIONS commit "--message=$COMMIT_MESSAGE"
 	else
 		echo "SHOULD NOT BE REACHED" >&2
 		exit 255
@@ -228,7 +255,7 @@ function commit {
 	fi
 
 	if [ "$COMMIT_DUMP" == "true" ]; then
-		git log --max-count 1
+		$GIT_PROGRAM log --max-count 1
 	fi
 }
 
@@ -249,7 +276,7 @@ function dopush {
 			if [[ $BRANCH_AT_REMOTE =~ ^refs/ ]]; then
 				REFSPEC+="HEAD:$BRANCH_AT_REMOTE"
 			else
-				local HAS_CHANGE_ID=`git log -1 | grep Change-Id: | wc -l`
+				local HAS_CHANGE_ID=`$GIT_PROGRAM log -1 | grep Change-Id: | wc -l`
 				if [ $HAS_CHANGE_ID == 1 ]; then
 					REFSPEC+="HEAD:refs/for/$BRANCH_AT_REMOTE"
 					if [ "$AUTO_SUBMIT" == "true" ]; then
@@ -264,7 +291,7 @@ function dopush {
 		echo "Using refspec $REFSPEC on pushing to $REMOTE"
 		
 		local TMPFILE=`mktemp`
-		git push $PUSH_OPTIONS $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
+		$GIT_PROGRAM push $PUSH_OPTIONS $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
 		
 		local PUSH_RET=$?
 		if [ $PUSH_RET == 0 ]; then
