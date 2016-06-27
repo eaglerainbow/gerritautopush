@@ -39,6 +39,8 @@ valid options:
                     you want to pass multiple options)
   -g [location]     do not use git from the path, but use a given version
                     specified at 'location' (you need to specify the full path)
+  -w [time]         waits an random value of seconds, up to 'time' seconds 
+                    before pushing/submitting
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
@@ -49,7 +51,7 @@ EOT
 
 
 # on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hu:e:scm:n:df:xp:b:ar:g:" opt; do
+while getopts ":hu:e:scm:n:df:xp:b:ar:g:w:" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -108,6 +110,9 @@ while getopts ":hu:e:scm:n:df:xp:b:ar:g:" opt; do
 		;;
 	g)
 		GIT_PROGRAM=$OPTARG
+		;;
+	w)
+		RANDOM_WAIT=$OPTARG
 		;;
 	h)
 		printhelp
@@ -287,6 +292,13 @@ function dopush {
 			fi
 		fi
 		echo "Using refspec $REFSPEC on pushing to $REMOTE"
+		
+		if [ "$RANDOM_WAIT" != "" ]; then
+			waittime=$RANDOM
+			waittime=$((waittime % RANDOM_WAIT))
+			echo "waiting for $waittime seconds before continuing"
+			sleep $waittime
+		fi
 		
 		local TMPFILE=`mktemp`
 		$GIT_PROGRAM push $PUSH_OPTIONS $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
