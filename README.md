@@ -70,6 +70,10 @@ valid options:
   -a                try to auto-submit the changes which are being pushed
   -r [options]      add receive-pack options when pushing (use quotes in case
                     you want to pass multiple options)
+  -g [location]     do not use git from the path, but use a given version
+                    specified at 'location' (you need to specify the full path) 
+  -w [time]         waits an random value of seconds, up to 'time' seconds 
+                    before pushing/submitting 
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
