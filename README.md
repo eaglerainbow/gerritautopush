@@ -94,4 +94,10 @@ This will
 
 # Execution of automated Tests
 Change to the directory "test", which is available in this repository.
-Run script ./runtests.sh there.
+Run script 
+```
+./runtests.sh
+```
+
+there. If no error is detected, the script runs through successfully and will return code 0. 
+In case any error is detected, the return code will be non-zero and the script terminates on next occassion. The state of the repository is the retained at the point in time when the error has occurred.
