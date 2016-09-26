@@ -305,7 +305,7 @@ function dopush {
 		
 		local PUSH_RET=$?
 		if [ $PUSH_RET == 0 ]; then
-			return 0;
+			return 0
 		fi
 		
 		# something failed; we need to analyze what went wrong
