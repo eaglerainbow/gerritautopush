@@ -25,7 +25,9 @@ git push origin
 # we need another entry, which the script may now commit
 echo "test2" >dummy2.txt
 
-$SUBJECT -s -c -m "dummy commit message" -p origin -r receive_pack_dummy -g $PWD/../../git_check_for_receivepack.sh
+$SUBJECT -s -c -m "dummy commit message" -p origin -r "receive_pack dummy" -g $PWD/../../git_check_for_receivepack.sh
+
+# testing against zero return code is alraedy enough - the core of the check is implemented in git_check_for_receivepack.sh
 
 if [ $? != 0 ]; then
 	echo "ERROR: Non-zero exit on test"

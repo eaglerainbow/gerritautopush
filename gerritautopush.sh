@@ -270,7 +270,7 @@ function dopush {
 
 		local PUSH_OPTIONS=""
 		if [ "$RECEIVE_PACK_OPTIONS" != "" ]; then
-			PUSH_OPTIONS=--receive-pack=\"git receive-pack $RECEIVE_PACK_OPTIONS\"
+			PUSH_OPTIONS='--receive-pack="git receive-pack '$RECEIVE_PACK_OPTIONS'"'
 		fi
 		
 		local REFSPEC=""
@@ -301,7 +301,12 @@ function dopush {
 		fi
 		
 		local TMPFILE=`mktemp`
-		$GIT_PROGRAM push $PUSH_OPTIONS $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
+		
+		if [ "$PUSH_OPTIONS" == "" ]; then
+			$GIT_PROGRAM push $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
+		else
+			$GIT_PROGRAM push "$PUSH_OPTIONS" $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
+		fi
 		
 		local PUSH_RET=$?
 		if [ $PUSH_RET == 0 ]; then
