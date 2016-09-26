@@ -14,3 +14,4 @@ echo "Script under test: $SUBJECT"
 ./testPushWithWait.sh || exit 1
 ./testOtherGitExecutable.sh || exit 1
 ./testPushReceivePack.sh || exit 1
+./testPushFailure.sh || exit 1

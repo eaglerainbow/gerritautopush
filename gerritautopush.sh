@@ -308,7 +308,8 @@ function dopush {
 			$GIT_PROGRAM push "$PUSH_OPTIONS" $REMOTE $REFSPEC 2>&1 | tee $TMPFILE
 		fi
 		
-		local PUSH_RET=$?
+		local PUSH_RET=${PIPESTATUS[0]}
+		# idea: see http://unix.stackexchange.com/questions/14270/get-exit-status-of-process-thats-piped-to-another/73180#73180 
 		if [ $PUSH_RET == 0 ]; then
 			return 0
 		fi
@@ -322,7 +323,7 @@ function dopush {
 		else
 			echo "ERROR: git pushed failed with error code $PUSH_RET" >&2
 			rm -f $TMPFILE
-			exit 1
+			exit 1 # NB: Not just "return" but "exit" to stop script execution!
 		fi
 		rm -f $TMPFILE
 	fi

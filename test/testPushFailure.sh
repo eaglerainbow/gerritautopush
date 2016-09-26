@@ -31,6 +31,7 @@ if [ $? == 0 ]; then
 	echo "ERROR: failing pushes are not propagated properly"
 	exit 1
 fi
+echo "Error was propagated properly => ok!"
 
 cd ..
 
