@@ -37,6 +37,7 @@ valid options:
                     (requires Gerrit server v2.7 or later)
   -r [options]      add receive-pack options when pushing (use quotes in case
                     you want to pass multiple options)
+                    (deprecated -- newer versions of gerrit suggest not to use it)
   -g [location]     do not use git from the path, but use a given version
                     specified at 'location' (you need to specify the full path)
   -w [time]         waits an random value of seconds, up to 'time' seconds 
