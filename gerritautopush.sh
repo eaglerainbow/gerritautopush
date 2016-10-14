@@ -38,6 +38,12 @@ valid options:
   -r [options]      add receive-pack options when pushing (use quotes in case
                     you want to pass multiple options)
                     (deprecated -- newer versions of gerrit suggest not to use it)
+  -o [email addr]   add email address to the notification email as the carbon-copy (CC)
+                    when pushing to Gerrit server (v2.7 or later required)
+                    Multi-addressing is possible by using the same parameter multiple times.
+  -v [email addr]   add email address / user as reviewer to the Code Review
+                    when pushing to Gerrit server (v2.7 or later required)
+                    Multi-addressing is possible by using the same parameter multiple times.
   -g [location]     do not use git from the path, but use a given version
                     specified at 'location' (you need to specify the full path)
   -w [time]         waits an random value of seconds, up to 'time' seconds 
@@ -50,9 +56,11 @@ value provided is considered to be the valid one.
 EOT
 }
 
+GERRIT_REVIEWER=()
+GERRIT_CC=()
 
 # on getopts parsing see also http://wiki.bash-hackers.org/howto/getopts_tutorial
-while getopts ":hu:e:scm:n:df:xp:b:ar:g:w:" opt; do
+while getopts ":hu:e:scm:n:df:xp:b:ar:g:w:o:v:" opt; do
 	case $opt in
 	u)
 		# Setting username locally before doing any further action
@@ -114,6 +122,12 @@ while getopts ":hu:e:scm:n:df:xp:b:ar:g:w:" opt; do
 		;;
 	w)
 		RANDOM_WAIT=$OPTARG
+		;;
+	o)
+		GERRIT_CC+=("$OPTARG")
+		;;
+	v)
+		GERRIT_REVIEWER+=("$OPTARG")
 		;;
 	h)
 		printhelp
@@ -265,6 +279,38 @@ function commit {
 	fi
 }
 
+function getRefspecExtension {
+	local ext=""
+
+	if [ "$AUTO_SUBMIT" == "true" ]; then
+		# see also http://gerrit-documentation.googlecode.com/svn/Documentation/2.7/user-upload.html#auto_merge
+		ext+="submit"
+	fi
+
+	# see also https://review.openstack.org/Documentation/cmd-receive-pack.html
+	if [ ${#GERRIT_CC[@]} != 0 ]; then
+		local i 
+		for ((i=0; i < ${#GERRIT_CC[@]}; i++)); do
+			if [ "$ext" != "" ]; then
+				ext+=","
+			fi
+			ext+="cc=${GERRIT_CC[i]}"
+		done
+	fi
+
+	if [ ${#GERRIT_REVIEWER[@]} != 0 ]; then
+		local i 
+		for ((i=0; i < ${#GERRIT_REVIEWER[@]}; i++)); do
+			if [ "$ext" != "" ]; then
+				ext+=","
+			fi
+			ext+="r=${GERRIT_REVIEWER[i]}"
+		done
+	fi
+	
+	echo "$ext"
+}
+
 function dopush {
 	if [ "$REMOTE" != "" ]; then
 		echo "Pushing changes to remote $REMOTE"
@@ -276,16 +322,19 @@ function dopush {
 		
 		local REFSPEC=""
 		if [ "$BRANCH_AT_REMOTE" != "" ]; then
-		
 			if [[ $BRANCH_AT_REMOTE =~ ^refs/ ]]; then
 				REFSPEC+="HEAD:$BRANCH_AT_REMOTE"
 			else
 				local HAS_CHANGE_ID=`$GIT_PROGRAM log -1 | grep Change-Id: | wc -l`
 				if [ $HAS_CHANGE_ID == 1 ]; then
 					REFSPEC+="HEAD:refs/for/$BRANCH_AT_REMOTE"
-					if [ "$AUTO_SUBMIT" == "true" ]; then
-						# see also http://gerrit-documentation.googlecode.com/svn/Documentation/2.7/user-upload.html#auto_merge
-						REFSPEC+="%submit"
+					
+					local extension=""
+					# for idea of ret-value, see also http://www.linuxjournal.com/content/return-values-bash-functions
+					extension=$(getRefspecExtension)
+					
+					if [ "$extension" != "" ]; then
+						REFSPEC+="%$extension"
 					fi
 				else
 					REFSPEC+="HEAD:refs/heads/$BRANCH_AT_REMOTE"

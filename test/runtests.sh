@@ -15,3 +15,8 @@ echo "Script under test: $SUBJECT"
 ./testOtherGitExecutable.sh || exit 1
 ./testPushReceivePack.sh || exit 1
 ./testPushFailure.sh || exit 1
+./testPushWithCC.sh || exit 1
+./testPushWithCCMultiple.sh || exit 1
+./testPushWithReviewer.sh || exit 1
+./testPushWithReviewerMultiple.sh || exit 1
+./testPushWithCCAndReviewer.sh || exit 1
