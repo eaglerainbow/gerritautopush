@@ -24,7 +24,8 @@ Gerritautopush.sh helps you automating to commit changes of files to a git repos
 * on pushing
   * custom selection of the target branch in the remote repository
   * try to immediately submit the Code Review (with Verified+1 and CodeReview+2) on pushing
-  * enrich call to receive-pack with additional custom parameters (for instance allows adding additional CC receivers to the Gerrit Code Review emails)
+  * ability to provide additional CC receivers to the Gerrit Code Review emails
+  * ability to add named reviewers when pushing the Gerrit Code Review
   * automated recovery on "internal server error" issue by creating a new Change-Id and trying to push once again
 * Miscellaneous
   * Setting the user name to be used for committing in the repository locally
@@ -68,12 +69,20 @@ valid options:
                     You may overwrite this, if you fully specify the branch's name including
                     all prefixes, i.e. refs/heads/master to force pushing directly to master
   -a                try to auto-submit the changes which are being pushed
+                    (requires Gerrit server v2.7 or later)
   -r [options]      add receive-pack options when pushing (use quotes in case
                     you want to pass multiple options)
+                    (deprecated -- newer versions of gerrit suggest not to use it)
+  -o [email addr]   add email address to the notification email as the carbon-copy (CC)
+                    when pushing to Gerrit server (v2.7 or later required)
+                    Multi-addressing is possible by using the same parameter multiple times.
+  -v [email addr]   add email address / user as reviewer to the Code Review
+                    when pushing to Gerrit server (v2.7 or later required)
+                    Multi-addressing is possible by using the same parameter multiple times.
   -g [location]     do not use git from the path, but use a given version
-                    specified at 'location' (you need to specify the full path) 
+                    specified at 'location' (you need to specify the full path)
   -w [time]         waits an random value of seconds, up to 'time' seconds 
-                    before pushing/submitting 
+                    before pushing/submitting
 
 Note: Providing a commit message is mandatory, if you have specified the -c option
 
