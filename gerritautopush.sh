@@ -317,6 +317,15 @@ function dopush {
 
 		local PUSH_OPTIONS=""
 		if [ "$RECEIVE_PACK_OPTIONS" != "" ]; then
+			# QUALMS! We know that this approach is quite broken:
+			# The RECEIVE_PACK_OPTIONS are passed together in one junk to the git
+			# command. That leads to the problem that the entire string
+			# "git receive-pack xyz" is passed to the remote git server is one
+			# single command. The gerrit server then searches for a single file
+			# called "git receive-pack xyz" and thus won't be able to find anything
+			# (as the command just called "git" only).
+			# However, as setting receive-pack options anyhow are considered to be
+			# deprecated for gerrit servers, this issue has not been fixed, yet.
 			PUSH_OPTIONS='--receive-pack="git receive-pack '$RECEIVE_PACK_OPTIONS'"'
 		fi
 		
